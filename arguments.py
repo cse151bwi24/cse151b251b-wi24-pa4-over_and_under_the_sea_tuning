@@ -48,7 +48,7 @@ def params():
                 help="Model hidden dimension.")
     parser.add_argument("--drop-rate", default=0.9, type=float,
                 help="Dropout rate for model training")
-    parser.add_argument("--embed-dim", default=10, type=int,
+    parser.add_argument("--embed-dim", default=768, type=int,
                 help="The embedding dimension of pretrained LM.")
     parser.add_argument("--adam-epsilon", default=1e-8, type=float,
                 help="Epsilon for Adam optimizer.")

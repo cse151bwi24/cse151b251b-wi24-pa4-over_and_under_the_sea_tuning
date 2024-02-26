@@ -20,9 +20,18 @@ class IntentModel(nn.Module):
 
     # task1: add necessary class variables as you wish.
     
+    
     # task2: initilize the dropout and classify layers
     self.dropout = nn.Dropout(args.drop_rate)
     self.classify = Classifier(args, target_size)
+    
+    print("---")
+    print(type(self.encoder.parameters()))
+    print(type(self.classify.parameters()))
+    print("---")
+    
+    parameters = list(self.encoder.parameters()) + list(self.classify.parameters())
+    self.optimizer = AdamW(params=parameters,lr=args.learning_rate, eps=args.adam_epsilon)
     
   def model_setup(self, args):
     print(f"Setting up {args.model} model")
@@ -45,7 +54,14 @@ class IntentModel(nn.Module):
     outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
     last_hidden_states = outputs.hidden_states[-1]
 
-    drop_out = self.dropout(last_hidden_states[0,0,:])
+    drop_out = self.dropout(last_hidden_states[:,0,:])
+    
+#     print("-------")
+#     print(len(outputs.hidden_states))
+#     print(last_hidden_states.shape)
+#     print(drop_out.shape)
+#     print(last_hidden_states[:,0,:].shape)
+#     print("-------")
 
     return self.classify(drop_out)
 
