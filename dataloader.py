@@ -57,7 +57,7 @@ def prepare_features(args, data, tokenizer, cache_path):
         # task1: process examples using tokenizer. Wrap it using BaseInstance class and append it to feats list.
         for example in progress_bar(examples, total=len(examples)):
             # tokenizer: set padding to 'max_length', set truncation to True, set max_length to args.max_len
-            embed_data = tokenizer(...)
+            embed_data = tokenizer(padding='max_length', truncation=True, max_length=args.max_len)
             
             instance = BaseInstance(embed_data, example)
             feats.append(instance)

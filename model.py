@@ -10,6 +10,7 @@ from torch.nn import functional as F
 from transformers import BertModel, BertConfig
 from transformers import AdamW, get_cosine_schedule_with_warmup, get_linear_schedule_with_warmup
 
+
 class IntentModel(nn.Module):
   def __init__(self, args, tokenizer, target_size):
     super().__init__()
@@ -20,14 +21,14 @@ class IntentModel(nn.Module):
     # task1: add necessary class variables as you wish.
     
     # task2: initilize the dropout and classify layers
-    self.dropout = nn.Dropout(...)
-    self.classify = Classifier(...)
+    self.dropout = nn.Dropout(args.drop_rate)
+    self.classify = Classifier(args, target_size)
     
   def model_setup(self, args):
     print(f"Setting up {args.model} model")
 
     # task1: get a pretrained model of 'bert-base-uncased'
-    self.encoder = BertModel.from_pretrained(...)
+    self.encoder = BertModel.from_pretrained("bert-base-uncased")
     
     self.encoder.resize_token_embeddings(len(self.tokenizer))  # transformer_check
 
@@ -41,7 +42,14 @@ class IntentModel(nn.Module):
     task3:
         feed the output of the dropout layer to the Classifier which is provided for you.
     """
-  
+    outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
+    last_hidden_states = outputs.hidden_states[-1]
+
+    drop_out = self.dropout(last_hidden_states[0,0,:])
+
+    return self.classify(drop_out)
+
+
 class Classifier(nn.Module):
   def __init__(self, args, target_size):
     super().__init__()
