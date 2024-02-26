@@ -18,7 +18,6 @@ class IntentModel(nn.Module):
     self.model_setup(args)
     self.target_size = target_size
 
-    # task1: add necessary class variables as you wish.
     
     
     # task2: initilize the dropout and classify layers
@@ -30,8 +29,10 @@ class IntentModel(nn.Module):
     print(type(self.classify.parameters()))
     print("---")
     
+    # task1: add necessary class variables as you wish.
     parameters = list(self.encoder.parameters()) + list(self.classify.parameters())
     self.optimizer = AdamW(params=parameters,lr=args.learning_rate, eps=args.adam_epsilon)
+    self.scheduler = None
     
   def model_setup(self, args):
     print(f"Setting up {args.model} model")

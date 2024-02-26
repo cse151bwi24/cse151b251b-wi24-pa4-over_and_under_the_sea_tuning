@@ -22,6 +22,8 @@ def baseline_train(args, model, datasets, tokenizer):
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
 
     # task2: setup model's optimizer_scheduler if you have
+    steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+    model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
     
     # task3: write a training loop
     for epoch_count in range(args.n_epochs):
@@ -35,7 +37,7 @@ def baseline_train(args, model, datasets, tokenizer):
             loss.backward()
 
             model.optimizer.step()  # backprop to update the weights
-#             model.scheduler.step()  # Update learning rate schedule
+            model.scheduler.step()  # Update learning rate schedule
             model.zero_grad()
             losses += loss.item()
     
