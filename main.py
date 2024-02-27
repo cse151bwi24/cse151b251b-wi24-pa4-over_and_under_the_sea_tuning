@@ -67,6 +67,8 @@ def run_eval(args, model, datasets, tokenizer, cr = None, split='validation'):
     dataloader = get_dataloader(args, datasets[split], split)
     loss = 0
     acc = 0
+    if split=="test":
+        cr = nn.CrossEntropyLoss() 
     if cr:
     #  move cr to cpu --  memory limitation
      cr = cr.to('cpu')
@@ -84,8 +86,8 @@ def run_eval(args, model, datasets, tokenizer, cr = None, split='validation'):
         
         tem = (logits.argmax(1) == labels).float().sum()
         acc += tem.item()
-    loss = loss/len(dataloader)
-    print(f'{split} acc:', acc/len(datasets[split]), f'|avg loss:', loss, f'|dataset split {split} size:', len(datasets[split]))
+#     loss = loss/len(dataloader)
+    print(f'{split} acc:', acc/len(datasets[split]), f'|total loss:', loss, f'|avg loss:', loss/len(dataloader), f'|dataset split {split} size:', len(datasets[split]))
     return loss
 
 def supcon_train(args, model, datasets, tokenizer):
@@ -105,6 +107,8 @@ if __name__ == "__main__":
   set_seed(args)
 
   fname = get_name(args)
+#   fname = "add_scheduler_" + get_name(args)
+
 
   cache_results, already_exist = check_cache(args)
   tokenizer = load_tokenizer(args)
