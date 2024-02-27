@@ -7,7 +7,7 @@ import math
 
 from tqdm import tqdm as progress_bar
 
-from utils import set_seed, setup_gpus, check_directories
+from utils import *
 from dataloader import get_dataloader, check_cache, prepare_features, process_data, prepare_inputs
 from load import load_data, load_tokenizer
 from arguments import params
@@ -16,19 +16,25 @@ from torch import nn
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def baseline_train(args, model, datasets, tokenizer):
+def baseline_train(args, model, datasets, tokenizer, fname = "baseLine-finetuning01"):
     criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
     # task1: setup train dataloader
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
 
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+
     # task2: setup model's optimizer_scheduler if you have
-    steps = args.n_epochs * len(list(enumerate(train_dataloader)))
-    model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
-    
+    if args.scheduler == 'cosine':
+      steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
+
+    lossList = []
+    valLoss = []
     # task3: write a training loop
     for epoch_count in range(args.n_epochs):
         losses = 0
         model.train()
+        criterion = criterion.to(device)
 
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             inputs, labels = prepare_inputs(batch, model, use_text=False)
@@ -37,12 +43,16 @@ def baseline_train(args, model, datasets, tokenizer):
             loss.backward()
 
             model.optimizer.step()  # backprop to update the weights
-            model.scheduler.step()  # Update learning rate schedule
+            if model.scheduler:
+              model.scheduler.step()
             model.zero_grad()
-            losses += loss.item()
-    
-        run_eval(args, model, datasets, tokenizer, split='validation')
-        print('epoch', epoch_count, '| losses:', losses)
+            losses += loss.item() # average loss per batch
+        
+        lossList.append(losses/len(train_dataloader))
+        valLoss.append(run_eval(args, model, datasets, tokenizer,  cr = criterion, split='validation'))
+        
+        print('epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
+    plot_losses(lossList, valLoss, fname)
   
 def custom_train(args, model, datasets, tokenizer):
     criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
@@ -52,17 +62,21 @@ def custom_train(args, model, datasets, tokenizer):
       
     # task3: write a training loop
 
-def run_eval(args, model, datasets, tokenizer, split='validation'):
+def run_eval(args, model, datasets, tokenizer, cr = None, split='validation'):
     model.eval()
     dataloader = get_dataloader(args, datasets[split], split)
-
+    loss = 0
     acc = 0
+    if cr:
+    #  move cr to cpu --  memory limitation
+     cr = cr.to('cpu')
     for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
         inputs, labels = prepare_inputs(batch, model)
         logits = model(inputs, labels)
-        
+        if cr:
+         loss += cr(logits.to('cpu'), labels.to('cpu')).item()
 #         print("----")
-# #         print(logits.argmax(1)) # original code
+#         print(logits.argmax(1)) # original code
 #         print(inputs.keys())
 #         print(logits.shape)
 #         print(logits.argmax(0))
@@ -70,8 +84,9 @@ def run_eval(args, model, datasets, tokenizer, split='validation'):
         
         tem = (logits.argmax(1) == labels).float().sum()
         acc += tem.item()
-  
-    print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
+    loss = loss/len(dataloader)
+    print(f'{split} acc:', acc/len(datasets[split]), f'|avg loss:', loss, f'|dataset split {split} size:', len(datasets[split]))
+    return loss
 
 def supcon_train(args, model, datasets, tokenizer):
     from loss import SupConLoss
@@ -81,13 +96,15 @@ def supcon_train(args, model, datasets, tokenizer):
     
     # task2: setup optimizer_scheduler in your model
 
-    # task3: write a training loop for SupConLoss function 
+    # task3: write a training loop for SupConLoss function
 
 if __name__ == "__main__":
   args = params()
   args = setup_gpus(args)
   args = check_directories(args)
   set_seed(args)
+
+  fname = get_name(args)
 
   cache_results, already_exist = check_cache(args)
   tokenizer = load_tokenizer(args)
@@ -105,7 +122,7 @@ if __name__ == "__main__":
     model = IntentModel(args, tokenizer, target_size=60).to(device)
     run_eval(args, model, datasets, tokenizer, split='validation')
     run_eval(args, model, datasets, tokenizer, split='test')
-    baseline_train(args, model, datasets, tokenizer)
+    baseline_train(args, model, datasets, tokenizer, fname)
     run_eval(args, model, datasets, tokenizer, split='test')
   elif args.task == 'custom': # you can have multiple custom task for different techniques
     model = CustomModel(args, tokenizer, target_size=60).to(device)
@@ -116,4 +133,6 @@ if __name__ == "__main__":
   elif args.task == 'supcon':
     model = SupConModel(args, tokenizer, target_size=60).to(device)
     supcon_train(args, model, datasets, tokenizer)
+  
+  dumpArgs(args, fname)
    

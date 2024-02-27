@@ -56,6 +56,7 @@ def params():
                 help="Total number of training epochs to perform.")
     parser.add_argument("--max-len", default=20, type=int,
                 help="maximum sequence length to look back")
-
+    parser.add_argument("--scheduler", default='None', type=str, help="scheduler type: None, linear, cosine, etc")
+    
     args = parser.parse_args()
     return args

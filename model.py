@@ -24,14 +24,14 @@ class IntentModel(nn.Module):
     self.dropout = nn.Dropout(args.drop_rate)
     self.classify = Classifier(args, target_size)
     
-    print("---")
-    print(type(self.encoder.parameters()))
-    print(type(self.classify.parameters()))
-    print("---")
+    # print("---")
+    # print(type(self.encoder.parameters()))
+    # print(type(self.classify.parameters()))
+    # print("---")
     
     # task1: add necessary class variables as you wish.
-    parameters = list(self.encoder.parameters()) + list(self.classify.parameters())
-    self.optimizer = AdamW(params=parameters,lr=args.learning_rate, eps=args.adam_epsilon)
+    # parameters = list(self.encoder.parameters()) + list(self.classify.parameters())
+    self.optimizer = None
     self.scheduler = None
     
   def model_setup(self, args):

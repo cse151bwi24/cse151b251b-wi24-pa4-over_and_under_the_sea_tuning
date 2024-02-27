@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import random
 import re
+import matplotlib.pyplot as plt
 
 
 
@@ -46,3 +47,53 @@ def setup_gpus(args):
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
     return args
+
+
+def plot_losses(train_losses, val_losses, fname):
+    """
+    Plots the training and validation losses across epochs and saves the plot as an image file with name - fname(function argument). 
+
+    Args:
+    train_losses (list): List of training losses for each epoch.
+    val_losses (list): List of validation losses for each epoch.
+    fname (str): Name of the file to save the plot (without extension).
+
+    Returns:
+    None
+    """
+
+    # Create 'plots' directory if it doesn't exist
+    if not os.path.isdir('plots'):
+        os.mkdir('plots')
+
+    # # added this
+    # train_losses = [t.cpu().detach().numpy() for t in train_losses]
+    # val_losses = [t.cpu().detach().numpy() for t in val_losses]
+
+    # Plotting training and validation losses
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Loss per Epoch')
+    plt.legend()
+
+    # Saving the plot as an image file in 'plots' directory
+    plt.savefig("./plots/" + fname + ".png")
+    plt.savefig("./plots/" + fname + ".svg")
+
+
+def dumpArgs(args, fname):
+    """
+    Dumps the arguments to a file in the save_dir
+    """
+    if not os.path.isdir('args'):
+        os.mkdir('args')
+
+    with open(f"./args/{fname}.txt", 'w') as f:
+        for arg in vars(args):
+            f.write(f"{arg}: {getattr(args, arg)}\n")
+
+def get_name(args):
+    # model_task_lr-lr_bs-batchsize_ep-epochs_dr-drop_rate_eps-epsilon_hdim-hidden
+    return f"{args.model}_{args.task}_lr-{args.learning_rate}_bs-{args.batch_size}_ep-{args.n_epochs}_dr-{args.drop_rate}_eps-{args.adam_epsilon}_hdim-{args.hidden_dim}_scheduler-{args.scheduler}"
