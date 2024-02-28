@@ -1,0 +1,63 @@
+Created assets/cache directory
+Creating new input features ...
+DatasetDict({
+    train: Dataset({
+        features: ['id', 'label', 'label_text', 'text'],
+        num_rows: 11514
+    })
+    validation: Dataset({
+        features: ['id', 'label', 'label_text', 'text'],
+        num_rows: 2033
+    })
+    test: Dataset({
+        features: ['id', 'label', 'label_text', 'text'],
+        num_rows: 2974
+    })
+})
+{'input_ids': [101, 4638, 10373, 2013, 2198, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]} {'id': '17180', 'label': 44, 'label_text': 'email_query', 'text': 'check email from john'}
+Number of train features: 11514
+{'input_ids': [101, 2054, 1005, 1055, 1996, 4769, 2005, 4074, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]} {'id': '17167', 'label': 17, 'label_text': 'email_querycontact', 'text': "what's the address for alex"}
+Number of validation features: 2033
+{'input_ids': [101, 2038, 2198, 2741, 2033, 2019, 10373, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]} {'id': '17179', 'label': 44, 'label_text': 'email_query', 'text': 'has john sent me an email'}
+Number of test features: 2974
+train 11514
+validation 2033
+test 2974
+Setting up bert model
+Loaded validation data with 128 batches
+validation acc: 0.010329562223315297 |total loss: 0 |avg loss: 0.0 |dataset split validation size: 2033
+Loaded test data with 186 batches
+test acc: 0.009751176866173503 |total loss: 765.9041836261749 |avg loss: 4.117764428097715 |dataset split test size: 2974
+Loaded train data with 720 batches
+Loaded validation data with 128 batches
+validation acc: 0.40039350713231675 |total loss: 335.7130354642868 |avg loss: 2.6227580895647407 |dataset split validation size: 2033
+train: epoch 0 | losses: 2568.775976896286 | avg loss: 3.5677444123559527
+Loaded validation data with 128 batches
+validation acc: 0.5745204131824889 |total loss: 258.2896208167076 |avg loss: 2.017887662630528 |dataset split validation size: 2033
+train: epoch 1 | losses: 1758.9334616661072 | avg loss: 2.4429631412029265
+Loaded validation data with 128 batches
+validation acc: 0.6419085095917364 |total loss: 205.0043824017048 |avg loss: 1.6015967375133187 |dataset split validation size: 2033
+train: epoch 2 | losses: 1299.7954825162888 | avg loss: 1.8052715034948454
+Loaded validation data with 128 batches
+validation acc: 0.720609936055091 |total loss: 172.82172787189484 |avg loss: 1.3501697489991784 |dataset split validation size: 2033
+train: epoch 3 | losses: 1002.5102942287922 | avg loss: 1.3923754086511002
+Loaded validation data with 128 batches
+validation acc: 0.7732415150024594 |total loss: 157.7926049232483 |avg loss: 1.2327547259628773 |dataset split validation size: 2033
+train: epoch 4 | losses: 801.2705740630627 | avg loss: 1.1128757973098093
+Loaded validation data with 128 batches
+validation acc: 0.8258730939498279 |total loss: 139.93393397331238 |avg loss: 1.093233859166503 |dataset split validation size: 2033
+train: epoch 5 | losses: 607.8497125804424 | avg loss: 0.8442357119172812
+Loaded validation data with 128 batches
+validation acc: 0.8150516478111166 |total loss: 139.35797266289592 |avg loss: 1.0887341614288744 |dataset split validation size: 2033
+train: epoch 6 | losses: 482.8367847800255 | avg loss: 0.6706066455278131
+Loaded validation data with 128 batches
+validation acc: 0.8519429414658141 |total loss: 124.97573490813375 |avg loss: 0.9763729289697949 |dataset split validation size: 2033
+train: epoch 7 | losses: 416.4130397737026 | avg loss: 0.5783514441301425
+Loaded validation data with 128 batches
+validation acc: 0.8504672897196262 |total loss: 128.38256959989667 |avg loss: 1.0029888249991927 |dataset split validation size: 2033
+train: epoch 8 | losses: 323.3663651496172 | avg loss: 0.44911995159669055
+Loaded validation data with 128 batches
+validation acc: 0.8514510575504181 |total loss: 138.49519472010434 |avg loss: 1.0819937087508151 |dataset split validation size: 2033
+train: epoch 9 | losses: 292.3932611271739 | avg loss: 0.4061017515655193
+Loaded test data with 186 batches
+test acc: 0.8365837256220578 |total loss: 205.89938576798886 |avg loss: 1.1069859449891875 |dataset split test size: 2974

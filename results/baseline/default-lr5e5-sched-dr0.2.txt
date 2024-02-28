@@ -1,0 +1,42 @@
+Loading features from cache at assets/cache/amazon.pkl
+train 11514
+validation 2033
+test 2974
+Setting up bert model
+Loaded validation data with 128 batches
+validation acc: 0.010329562223315297 |total loss: 0 |avg loss: 0.0 |dataset split validation size: 2033
+Loaded test data with 186 batches
+test acc: 0.009751176866173503 |total loss: 765.9041836261749 |avg loss: 4.117764428097715 |dataset split test size: 2974
+Loaded train data with 720 batches
+Loaded validation data with 128 batches
+validation acc: 0.5366453516969996 |total loss: 255.3733213543892 |avg loss: 1.9951040730811656 |dataset split validation size: 2033
+train: epoch 0 | losses: 2009.252244234085 | avg loss: 2.790628116991785
+Loaded validation data with 128 batches
+validation acc: 0.6606000983767831 |total loss: 191.1869204044342 |avg loss: 1.4936478156596422 |dataset split validation size: 2033
+train: epoch 1 | losses: 1185.7781373262405 | avg loss: 1.6469140796197785
+Loaded validation data with 128 batches
+validation acc: 0.7402852926709297 |total loss: 154.16619999706745 |avg loss: 1.2044234374770895 |dataset split validation size: 2033
+train: epoch 2 | losses: 772.999373793602 | avg loss: 1.0736102413800028
+Loaded validation data with 128 batches
+validation acc: 0.8342351205115592 |total loss: 131.96423893421888 |avg loss: 1.030970616673585 |dataset split validation size: 2033
+train: epoch 3 | losses: 505.9617487937212 | avg loss: 0.7027246511023906
+Loaded validation data with 128 batches
+validation acc: 0.839153959665519 |total loss: 122.95470142364502 |avg loss: 0.9605836048722267 |dataset split validation size: 2033
+train: epoch 4 | losses: 332.47622625529766 | avg loss: 0.4617725364656912
+Loaded validation data with 128 batches
+validation acc: 0.8583374323659616 |total loss: 119.07888853363693 |avg loss: 0.9303038166690385 |dataset split validation size: 2033
+train: epoch 5 | losses: 226.40230813995004 | avg loss: 0.31444765019437504
+Loaded validation data with 128 batches
+validation acc: 0.8563698967043778 |total loss: 122.42375104129314 |avg loss: 0.9564355550101027 |dataset split validation size: 2033
+train: epoch 6 | losses: 171.31395517289639 | avg loss: 0.23793604885124497
+Loaded validation data with 128 batches
+validation acc: 0.8598130841121495 |total loss: 118.51516454480588 |avg loss: 0.925899723006296 |dataset split validation size: 2033
+train: epoch 7 | losses: 140.58010141924024 | avg loss: 0.19525014086005588
+Loaded validation data with 128 batches
+validation acc: 0.8632562715199213 |total loss: 120.09726753272116 |avg loss: 0.9382599025993841 |dataset split validation size: 2033
+train: epoch 8 | losses: 123.86669582128525 | avg loss: 0.17203707752956285
+Loaded validation data with 128 batches
+validation acc: 0.8632562715199213 |total loss: 120.2093564439565 |avg loss: 0.9391355972184101 |dataset split validation size: 2033
+train: epoch 9 | losses: 118.64559355005622 | avg loss: 0.1647855465973003
+Loaded test data with 186 batches
+test acc: 0.855413584398117 |total loss: 175.369825091213 |avg loss: 0.9428485219957687 |dataset split test size: 2974
