@@ -30,9 +30,12 @@ def baseline_train(args, model, datasets, tokenizer, fname = "baseLine-finetunin
 
     lossList = []
     valLoss = []
+    accList = []
+    valAcc = []
     # task3: write a training loop
     for epoch_count in range(args.n_epochs):
         losses = 0
+        acc = 0
         model.train()
         criterion = criterion.to(device)
 
@@ -47,12 +50,19 @@ def baseline_train(args, model, datasets, tokenizer, fname = "baseLine-finetunin
               model.scheduler.step()
             model.zero_grad()
             losses += loss.item() # average loss per batch
+            acc += (logits.argmax(1) == labels).float().sum().item()
         
         lossList.append(losses/len(train_dataloader))
-        valLoss.append(run_eval(args, model, datasets, tokenizer,  cr = criterion, split='validation'))
+        accList.append(acc/len(datasets['train']))
+
+        vls, vacc  = run_eval(args, model, datasets, tokenizer,  cr = criterion, split='validation')
         
-        print('epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
+        valLoss.append(vls)
+        valAcc.append(vacc)
+        
+        print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
     plot_losses(lossList, valLoss, fname)
+    plot_acc(accList, valAcc, fname)
   
 def custom_train(args, model, datasets, tokenizer):
     criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
@@ -68,27 +78,20 @@ def run_eval(args, model, datasets, tokenizer, cr = None, split='validation'):
     loss = 0
     acc = 0
     if split=="test":
-        cr = nn.CrossEntropyLoss() 
+      cr = nn.CrossEntropyLoss() 
     if cr:
-    #  move cr to cpu --  memory limitation
-     cr = cr.to('cpu')
+      cr = cr.to('cpu') 
     for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
         inputs, labels = prepare_inputs(batch, model)
         logits = model(inputs, labels)
         if cr:
          loss += cr(logits.to('cpu'), labels.to('cpu')).item()
-#         print("----")
-#         print(logits.argmax(1)) # original code
-#         print(inputs.keys())
-#         print(logits.shape)
-#         print(logits.argmax(0))
-#         print("----")
-        
+
         tem = (logits.argmax(1) == labels).float().sum()
         acc += tem.item()
-#     loss = loss/len(dataloader)
+
     print(f'{split} acc:', acc/len(datasets[split]), f'|total loss:', loss, f'|avg loss:', loss/len(dataloader), f'|dataset split {split} size:', len(datasets[split]))
-    return loss
+    return loss/len(dataloader), acc/len(datasets[split])
 
 def supcon_train(args, model, datasets, tokenizer):
     from loss import SupConLoss

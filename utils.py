@@ -63,8 +63,8 @@ def plot_losses(train_losses, val_losses, fname):
     """
 
     # Create 'plots' directory if it doesn't exist
-    if not os.path.isdir('plots'):
-        os.mkdir('plots')
+    if not os.path.isdir('plots/loss'):
+        os.mkdir('plots/loss')
 
     # # added this
     # train_losses = [t.cpu().detach().numpy() for t in train_losses]
@@ -79,8 +79,45 @@ def plot_losses(train_losses, val_losses, fname):
     plt.legend()
 
     # Saving the plot as an image file in 'plots' directory
-    plt.savefig("./plots/" + fname + ".png")
-    plt.savefig("./plots/" + fname + ".svg")
+    plt.savefig("./plots/loss/" + fname + ".png")
+    plt.savefig("./plots/loss/" + fname + ".svg")
+    plt.close()
+
+
+def plot_acc(train_acc, val_acc, fname):
+    """
+    Plots the training and validation losses across epochs and saves the plot as an image file with name - fname(function argument). 
+
+    Args:
+    train_losses (list): List of training losses for each epoch.
+    val_losses (list): List of validation losses for each epoch.
+    fname (str): Name of the file to save the plot (without extension).
+
+    Returns:
+    None
+    """
+
+    # Create 'plots' directory if it doesn't exist
+    if not os.path.isdir('plots/acc'):
+        os.mkdir('plots/acc')
+
+    # # added this
+    # train_losses = [t.cpu().detach().numpy() for t in train_losses]
+    # val_losses = [t.cpu().detach().numpy() for t in val_losses]
+
+    # Plotting training and validation losses
+    plt.plot(train_acc, label='Training Accuracy')
+    plt.plot(val_acc, label='Validation Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy per Epoch')
+    plt.legend()
+
+    # Saving the plot as an image file in 'plots' directory
+    plt.savefig("./plots/acc/" + fname + ".png")
+    plt.savefig("./plots/acc/" + fname + ".svg")
+    plt.close()
+
 
 
 def dumpArgs(args, fname):
