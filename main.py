@@ -98,10 +98,51 @@ def supcon_train(args, model, datasets, tokenizer):
     criterion = SupConLoss(temperature=args.temperature)
 
     # task1: load training split of the dataset
-    
-    # task2: setup optimizer_scheduler in your model
+    train_dataloader = get_dataloader(args, datasets['train'], split='train')
 
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+
+    # task2: setup model's optimizer_scheduler if you have
+    if args.scheduler == 'cosine':
+      steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
+
+    lossList = []
+    valLoss = []
+    accList = []
+    valAcc = []
+    
     # task3: write a training loop for SupConLoss function
+    for epoch_count in range(args.n_epochs):
+        losses = 0
+        acc = 0
+        model.train()
+        criterion = criterion.to(device)
+
+        for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
+            inputs, labels = prepare_inputs(batch, model, use_text=False)
+            logits = model(inputs, labels)
+            loss = criterion(logits, labels)
+            loss.backward()
+
+            model.optimizer.step()  # backprop to update the weights
+            if model.scheduler:
+              model.scheduler.step()
+            model.zero_grad()
+            losses += loss.item() # average loss per batch
+            acc += (logits.argmax(1) == labels).float().sum().item()
+        
+        lossList.append(losses/len(train_dataloader))
+        accList.append(acc/len(datasets['train']))
+
+        vls, vacc  = run_eval(args, model, datasets, tokenizer,  cr = criterion, split='validation')
+        
+        valLoss.append(vls)
+        valAcc.append(vacc)
+        
+        print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
+    plot_losses(lossList, valLoss, fname)
+    plot_acc(accList, valAcc, fname)
 
 if __name__ == "__main__":
   args = params()
@@ -140,6 +181,7 @@ if __name__ == "__main__":
   elif args.task == 'supcon':
     model = SupConModel(args, tokenizer, target_size=60).to(device)
     supcon_train(args, model, datasets, tokenizer)
+    run_eval(args, model, datasets, tokenizer, split='test')
   
   dumpArgs(args, fname)
    

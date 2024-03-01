@@ -92,6 +92,9 @@ class SupConModel(IntentModel):
     super().__init__(args, tokenizer, target_size)
 
     # task1: initialize a linear head layer
+    self.linear_head = nn.Linear(args.embed_dim, args.embed_dim)
+    
+    self.dropout = nn.Dropout(args.drop_rate)
  
   def forward(self, inputs, targets):
 
@@ -104,3 +107,13 @@ class SupConModel(IntentModel):
     task3:
         feed the normalized output of the dropout layer to the linear head layer; return the embedding
     """
+    outputs = self.encoder(**inputs, output_hidden_states=True)
+    last_hidden_states = outputs.hidden_states[-1]
+    
+    dropout_cls_embeddings = self.dropout(last_hidden_states[:,0,:])
+    
+    normalized_embeddings = F.normalize(dropout_cls_embeddings, p=2, dim=1)
+    
+    contrastive_embeddings = self.linear_head(normalized_embeddings)
+    
+    return contrastive_embeddings

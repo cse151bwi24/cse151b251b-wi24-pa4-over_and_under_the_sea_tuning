@@ -33,6 +33,12 @@ class SupConLoss(nn.Module):
                   if features.is_cuda
                   else torch.device('cpu'))
 
+#         print("----------------------------")
+#         print(features.shape) # output: torch.Size([16, 768])
+        features = features.unsqueeze(1)
+#         print(features.shape) # output: torch.Size([16, 1, 768])
+#         print("----------------------------")
+        
         if len(features.shape) < 3:
             raise ValueError('`features` needs to be [bsz, n_views, ...],'
                              'at least 3 dimensions are required')

@@ -8,13 +8,15 @@ mkdir assets
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --drop-rate 0.5 >> results/baseline/default-lr5e5-sched-dr0.5.txt
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --drop-rate 0.3 >> results/baseline/default-lr5e5-sched-dr0.3.txt
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --drop-rate 0.2 >> results/baseline/default-lr5e5-sched-dr0.2.txt
-python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 20 --drop-rate 0.2 >> results/baseline/default-lr5e5-sched-hidden20-dr0.2.txt
-python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 20 --drop-rate 0.3 >> results/baseline/default-lr5e5-sched-hidden20-dr0.3.txt
+# python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 20 --drop-rate 0.2 >> results/baseline/default-lr5e5-sched-hidden20-dr0.2.txt
+# python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 20 --drop-rate 0.3 >> results/baseline/default-lr5e5-sched-hidden20-dr0.3.txt
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 30 >> results/baseline/default-lr5e5-sched-hidden30.txt
-python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 40 --drop-rate 0.2 >> results/baseline/default-lr5e5-sched-hidden40-dr0.2.txt
-python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 40 --drop-rate 0.3 >> results/baseline/default-lr5e5-sched-hidden40-dr0.3.txt
+# python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 40 --drop-rate 0.2 >> results/baseline/default-lr5e5-sched-hidden40-dr0.2.txt
+# python main.py --n-epochs 10 --do-train --learning-rate 0.00005 --scheduler cosine --hidden-dim 40 --drop-rate 0.3 >> results/baseline/default-lr5e5-sched-hidden40-dr0.3.txt
 
 
 
 # python main.py --n-epochs 10 --do-train --task custom --reinit_n_layers 3
 # python main.py --n-epochs 10 --do-train --task supcon --batch-size 64
+
+python main.py --task supcon --n-epochs 10 --do-train --scheduler cosine
