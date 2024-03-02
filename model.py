@@ -84,6 +84,25 @@ class Classifier(nn.Module):
 class CustomModel(IntentModel):
   def __init__(self, args, tokenizer, target_size):
     super().__init__(args, tokenizer, target_size)
+    self.tokenizer = tokenizer
+    self.model_setup(args)
+    self.target_size = target_size
+    self.dropout = nn.Dropout(args.drop_rate)
+    self.classify = Classifier(args, target_size)
+    #self.optimizer = None
+    self.optimizer = optim.SGD(self.encoder.parameters(), lr=args.learning_rate, momentum=0.9)
+    #self.optimizer = torch.optim.AdamW(self.encoder.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    self.scheduler = None
+
+    # # Setting up warm_up scheduler to just warm-- no decay
+    self.warmup_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer,
+                                                      num_warmup_steps = 50,
+                                                      num_training_steps = 50)
+    # Setting up SWA
+    #swa_model = torch.optim.swa_utils.AveragedModel()
+    #self.swa_scheduler = None
+    self.swa_scheduler = torch.optim.swa_utils.SWALR(self.optimizer, swa_lr = 0.01)
+    self.avg_model = None
     
     # task1: use initialization for setting different strategies/techniques to better fine-tune the BERT model
 

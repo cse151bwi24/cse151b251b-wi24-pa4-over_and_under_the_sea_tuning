@@ -67,10 +67,60 @@ def baseline_train(args, model, datasets, tokenizer, fname = "baseLine-finetunin
 def custom_train(args, model, datasets, tokenizer):
     criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
     # task1: setup train dataloader
+    train_dataloader = get_dataloader(args, datasets['train'], split='train')
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
 
     # task2: setup model's optimizer_scheduler if you have
-      
+    if args.scheduler == 'warm_up':
+      steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = model.warmup_scheduler
+      #model.scheduler.optimizer = model.optimizer
+      model.scheduler.num_training_steps = steps
+    elif args.scheduler == "SWA":
+      #steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = model.swa_scheduler
+      model.avg_model = torch.optim.swa_utils.AveragedModel(model)
+      #model.scheduler.optimizer = model.optimizer
+
     # task3: write a training loop
+    lossList = []
+    valLoss = []
+    accList = []
+    valAcc = []
+    for epoch_count in range(args.n_epochs):
+        losses = 0
+        acc = 0
+        model.train()
+        criterion = criterion.to(device)
+
+        for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
+            inputs, labels = prepare_inputs(batch, model, use_text=False)
+            logits = model(inputs, labels)
+            loss = criterion(logits, labels)
+            loss.backward()
+
+            model.optimizer.step()  # backprop to update the weights
+            #print("optimized-step")
+            if model.avg_model:
+              model.avg_model.update_parameters(model)
+            model.scheduler.step()
+            #print("sched-step")
+            model.zero_grad()
+            losses += loss.item() # average loss per batch
+            acc += (logits.argmax(1) == labels).float().sum().item()
+        
+        lossList.append(losses/len(train_dataloader))
+        accList.append(acc/len(datasets['train']))
+
+        vls, vacc  = run_eval(args, model, datasets, tokenizer,  cr = criterion, split='validation')
+        
+        valLoss.append(vls)
+        valAcc.append(vacc)
+        
+        print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
+    plot_losses(lossList, valLoss, fname)
+    plot_acc(accList, valAcc, fname)  
+
 
 def run_eval(args, model, datasets, tokenizer, cr = None, split='validation'):
     model.eval()
