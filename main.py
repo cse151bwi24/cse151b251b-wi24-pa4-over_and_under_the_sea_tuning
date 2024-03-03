@@ -68,7 +68,9 @@ def custom_train(args, model, datasets, tokenizer):
     criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
     # task1: setup train dataloader
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
-    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    opt = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    model.opt_setUp(opt)
+    # model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
 
     # task2: setup model's optimizer_scheduler if you have
     if args.scheduler == 'warm_up':
