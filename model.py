@@ -90,9 +90,7 @@ class CustomModel(IntentModel):
     self.target_size = target_size
     self.dropout = nn.Dropout(args.drop_rate)
     self.classify = Classifier(args, target_size)
-    #self.optimizer = None
     self.optimizer = None
-    #self.optimizer = torch.optim.AdamW(self.encoder.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
     self.scheduler = None
 
     # # Setting up warm_up scheduler to just warm-- no decay
@@ -102,14 +100,16 @@ class CustomModel(IntentModel):
     #self.swa_scheduler = None
     self.swa_scheduler = None
     self.avg_model = None
+    self.swa_start = 0 # used for combined technique to begin SWA
     
     # task1: use initialization for setting different strategies/techniques to better fine-tune the BERT model
-  def opt_setUp (self, opt):
+  def opt_setUp (self, opt, warmup_steps,swa_lr):
     self.optimizer = opt
-    self.warmup_scheduler = get_linear_schedule_with_warmup(optimizer=self.optimizer,
-                                                    num_warmup_steps = 50,
-                                                    num_training_steps = 50)
-    self.swa_scheduler = torch.optim.swa_utils.SWALR(self.optimizer, swa_lr = 0.01)
+    self.warmup_scheduler = get_cosine_schedule_with_warmup(optimizer=self.optimizer,
+                                                    num_warmup_steps = warmup_steps,
+                                                    num_training_steps = warmup_steps)
+    self.swa_start = warmup_steps # for the combined technique
+    self.swa_scheduler = torch.optim.swa_utils.SWALR(self.optimizer, swa_lr = swa_lr)
 
 
 class SupConModel(IntentModel):

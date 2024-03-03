@@ -1,6 +1,6 @@
 mkdir assets
 python main.py --n-epochs 10 --do-train --task custom --learning-rate 0.00005 --scheduler SWA --drop-rate 0.3 >> results/custom/SWA_lr5e5-dr0.3-swalr0.025--mohammad.txt
-#python main.py --n-epochs 10 --do-train --task custom --learning-rate 0.00005 --scheduler warm_up --drop-rate 0.3 >> results/custom/warmup_lr5e5-dr0.3-steps50.txt
+#python main.py --n-epochs 10 --do-train --task custom --learning-rate 0.00005 --scheduler warm_up --drop-rate 0.3 >> results/custom/warmup_lr5e5-dr0.3-steps100.txt
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00005
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00005 >> results/baseline/default-lr5e5.txt
 # python main.py --n-epochs 10 --do-train --learning-rate 0.00001 >> results/baseline/default-lr1e5.txt

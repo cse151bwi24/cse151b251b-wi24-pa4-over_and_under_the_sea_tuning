@@ -68,22 +68,18 @@ def custom_train(args, model, datasets, tokenizer):
     criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
     # task1: setup train dataloader
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
-    opt = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-    model.opt_setUp(opt)
-    # model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-
+    opt = torch.optim.SGD(model.parameters(), lr=args.learning_rate)
+    
+    model.opt_setUp(opt,8,0.00525) #set up the custom schedulers
     # task2: setup model's optimizer_scheduler if you have
     if args.scheduler == 'warm_up':
       steps = args.n_epochs * len(list(enumerate(train_dataloader)))
       model.scheduler = model.warmup_scheduler
-      #model.scheduler.optimizer = model.optimizer
       model.scheduler.num_training_steps = steps
     elif args.scheduler == "SWA":
-      #steps = args.n_epochs * len(list(enumerate(train_dataloader)))
       model.scheduler = model.swa_scheduler
       model.avg_model = torch.optim.swa_utils.AveragedModel(model)
-      #model.scheduler.optimizer = model.optimizer
-
+      
     # task3: write a training loop
     lossList = []
     valLoss = []
@@ -103,10 +99,23 @@ def custom_train(args, model, datasets, tokenizer):
 
             model.optimizer.step()  # backprop to update the weights
             #print("optimized-step")
-            if model.avg_model:
-              model.avg_model.update_parameters(model)
-            model.scheduler.step()
-            #print("sched-step")
+            '''
+            The Combined technique involves running a warmup for a certain number of steps before 
+            running SWA for the rest of it; SWA complements the warmup as it makes use of the early exposure 
+            of the model to the new data.
+            '''
+            # run the combined technique if the argument is Comb
+            if args.scheduler == "Comb" and step > model.swa_start:
+              if model.avg_model:
+                model.avg_model.update_parameters(model)
+              model.swa_scheduler.step()
+            elif args.scheduler == "Comb":
+              model.warmup_scheduler.step()
+            else:
+              if model.avg_model:
+                model.avg_model.update_parameters(model)
+              model.scheduler.step()
+            #reset the gradients
             model.zero_grad()
             losses += loss.item() # average loss per batch
             acc += (logits.argmax(1) == labels).float().sum().item()
