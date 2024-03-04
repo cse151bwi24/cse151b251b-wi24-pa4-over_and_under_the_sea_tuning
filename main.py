@@ -70,7 +70,7 @@ def custom_train(args, model, datasets, tokenizer):
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
     opt = torch.optim.SGD(model.parameters(), lr=args.learning_rate)
     
-    model.opt_setUp(opt,8,0.00525) #set up the custom schedulers
+    model.opt_setUp(opt,6,0.006) #set up the custom schedulers
     # task2: setup model's optimizer_scheduler if you have
     if args.scheduler == 'warm_up':
       steps = args.n_epochs * len(list(enumerate(train_dataloader)))
