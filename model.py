@@ -52,19 +52,16 @@ class IntentModel(nn.Module):
     task3:
         feed the output of the dropout layer to the Classifier which is provided for you.
     """
+    # outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
+    # last_hidden_states = outputs.hidden_states[-1]
+
+    # drop_out = self.dropout(last_hidden_states[:,0,:])
+    
     outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
     last_hidden_states = outputs.hidden_states[-1]
-
-    drop_out = self.dropout(last_hidden_states[:,0,:])
+    cls = last_hidden_states[:,0,:]
     
-#     print("-------")
-#     print(len(outputs.hidden_states))
-#     print(last_hidden_states.shape)
-#     print(drop_out.shape)
-#     print(last_hidden_states[:,0,:].shape)
-#     print("-------")
-
-    return self.classify(drop_out)
+    return self.classify(cls)
 
 
 class Classifier(nn.Module):
@@ -92,9 +89,13 @@ class SupConModel(IntentModel):
     super().__init__(args, tokenizer, target_size)
 
     # task1: initialize a linear head layer
-    self.linear_head = nn.Linear(args.embed_dim, args.embed_dim)
+    self.linear_head = nn.Sequential(
+        nn.Linear(feat_dim,  384),
+        nn.ReLU(),
+        nn.Linear(384, 192),
+    )
     
-    self.dropout = nn.Dropout(args.drop_rate)
+    self.method = args.method
  
   def forward(self, inputs, targets):
 
@@ -107,13 +108,30 @@ class SupConModel(IntentModel):
     task3:
         feed the normalized output of the dropout layer to the linear head layer; return the embedding
     """
-    outputs = self.encoder(**inputs, output_hidden_states=True)
+    # print ("Forwarding")
+    # print("Using model", self.encoder)
+    # print (inputs)
+
+    outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
     last_hidden_states = outputs.hidden_states[-1]
-    
-    dropout_cls_embeddings = self.dropout(last_hidden_states[:,0,:])
-    
-    normalized_embeddings = F.normalize(dropout_cls_embeddings, p=2, dim=1)
-    
-    contrastive_embeddings = self.linear_head(normalized_embeddings)
-    
-    return contrastive_embeddings
+    cls = last_hidden_states[:,0,:]
+    # print("--------------------cls-------------------")
+    # print(cls)
+    f1 = self.dropout(cls)
+    f2 = self.dropout(cls)
+    # print("--------------------drop-------------------")
+    # print(f1, f2)
+    # print("---------------normalized-------------------")
+    f1 = F.normalize(f1, dim=1)
+    f2 = F.normalize(f2, dim=1)
+    # print(f1, f2)
+    f1p = self.linear_head(f1)
+    f2p = self.linear_head(f2)
+    # print("--------------------linear-------------------")
+    # print (f1, f2)
+    features = torch.cat([f1p.unsqueeze(1), f2p.unsqueeze(1)], dim=1)
+    # print("===========com=============")
+    # print (features.shape)
+    logits = self.classify(self.dropout(cls))
+    return features, logits
+

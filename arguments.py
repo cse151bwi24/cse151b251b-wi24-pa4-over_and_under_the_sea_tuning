@@ -10,7 +10,7 @@ def params():
                       tune is advanced techiques to fine-tune bert;\n\
                       constast is contrastive learning method")
                       #choices=['baseline','tune','supcon'])
-    parser.add_argument("--temperature", default=0.7, type=int, 
+    parser.add_argument("--temperature", default=0.07, type=float, 
                 help="temperature parameter for contrastive loss")
 
     # optional fine-tuning techiques parameters
@@ -40,13 +40,13 @@ def params():
                 help="Whether to run eval on the dev set.")
     
     # Hyper-parameters for tuning
-    parser.add_argument("--batch-size", default=16, type=int,
+    parser.add_argument("--batch-size", default=128, type=int,
                 help="Batch size per GPU/CPU for training and evaluation.")
     parser.add_argument("--learning-rate", default=1e-4, type=float,
                 help="Model learning rate starting point.")
     parser.add_argument("--hidden-dim", default=10, type=int,
                 help="Model hidden dimension.")
-    parser.add_argument("--drop-rate", default=0.9, type=float,
+    parser.add_argument("--drop-rate", default=0.6, type=float,
                 help="Dropout rate for model training")
     parser.add_argument("--embed-dim", default=768, type=int,
                 help="The embedding dimension of pretrained LM.")
@@ -57,6 +57,8 @@ def params():
     parser.add_argument("--max-len", default=20, type=int,
                 help="maximum sequence length to look back")
     parser.add_argument("--scheduler", default='None', type=str, help="scheduler type: None, linear, cosine, etc")
+
+    parser.add_argument("--method", default='None', type=str, help="method type: None, SupCon, SimCLR")
     
     args = parser.parse_args()
     return args

@@ -33,12 +33,6 @@ class SupConLoss(nn.Module):
                   if features.is_cuda
                   else torch.device('cpu'))
 
-#         print("----------------------------")
-#         print(features.shape) # output: torch.Size([16, 768])
-        features = features.unsqueeze(1)
-#         print(features.shape) # output: torch.Size([16, 1, 768])
-#         print("----------------------------")
-        
         if len(features.shape) < 3:
             raise ValueError('`features` needs to be [bsz, n_views, ...],'
                              'at least 3 dimensions are required')
@@ -90,7 +84,8 @@ class SupConLoss(nn.Module):
 
         # compute log_prob
         exp_logits = torch.exp(logits) * logits_mask
-        log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
+        # print(torch.log(exp_logits.sum(1, keepdim=True)))
+        log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True) + 1e-20)
 
         # compute mean of log-likelihood over positive
         mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
@@ -98,5 +93,4 @@ class SupConLoss(nn.Module):
         # loss
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
         loss = loss.view(anchor_count, batch_size).mean()
-
         return loss

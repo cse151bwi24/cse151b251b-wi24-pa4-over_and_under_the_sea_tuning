@@ -19,4 +19,4 @@ mkdir assets
 # python main.py --n-epochs 10 --do-train --task custom --reinit_n_layers 3
 # python main.py --n-epochs 10 --do-train --task supcon --batch-size 64
 
-python main.py --task supcon --n-epochs 10 --do-train --scheduler cosine
+python main.py --task supcon --n-epochs 10 --do-train --temperature 0.07 --scheduler cosine --drop-rate 0.8 --learning-rate 0.00005 --hidden-dim 20 --method SimCLR >> ff7.txt

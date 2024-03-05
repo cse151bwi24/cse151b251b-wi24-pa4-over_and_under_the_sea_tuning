@@ -75,44 +75,147 @@ def custom_train(args, model, datasets, tokenizer):
 def run_eval(args, model, datasets, tokenizer, cr = None, split='validation'):
     model.eval()
     dataloader = get_dataloader(args, datasets[split], split)
-    loss = 0
+    losses = 0
     acc = 0
+
+    if cr:
+      cr = cr.to('cpu')
     if split=="test":
       cr = nn.CrossEntropyLoss() 
-    if cr:
-      cr = cr.to('cpu') 
+
     for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
         inputs, labels = prepare_inputs(batch, model)
-        logits = model(inputs, labels)
-        if cr:
-         loss += cr(logits.to('cpu'), labels.to('cpu')).item()
+        if (args.task == 'supcon'):
+            _, logits = model(inputs, labels)
+            loss = cr(logits.to('cpu'), labels.to('cpu'))
+            losses += loss.item()
+            tem = (logits.argmax(1) == labels).float().sum()
+            acc += tem.item()
+        else:
+          logits = model(inputs, labels)
+          if cr:
+            losses += cr(logits.to('cpu'), labels.to('cpu')).item()
+          tem = (logits.argmax(1) == labels).float().sum()
+          acc += tem.item()
 
-        tem = (logits.argmax(1) == labels).float().sum()
-        acc += tem.item()
+    print(f'{split} acc:', acc/len(datasets[split]), f'|total loss:', losses, f'|avg loss:', losses/len(dataloader), f'|dataset split {split} size:', len(datasets[split]))
+    return losses/len(dataloader), acc/len(datasets[split])
 
-    print(f'{split} acc:', acc/len(datasets[split]), f'|total loss:', loss, f'|avg loss:', loss/len(dataloader), f'|dataset split {split} size:', len(datasets[split]))
-    return loss/len(dataloader), acc/len(datasets[split])
+def run_eval_aug(args, model, datasets, tokenizer, cr = None, split='validation'):
+    model.eval()
+    dataloader = get_dataloader(args, datasets[split], split)
+    losses = 0
+
+    if not cr and args.task == 'supcon':
+      from loss import SupConLoss
+      cr = SupConLoss(temperature=args.temperature)
+    if cr:
+      cr = cr.to('cpu')
+
+    for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
+        inputs, labels = prepare_inputs(batch, model)
+        if (args.task == 'supcon'):
+            features, _ = model(inputs, labels)
+            if (args.method == 'SupCon'):
+                loss = cr(features, labels)
+            elif (args.method == 'SimCLR'):
+                loss = cr(features)
+            else:
+                raise ValueError('Must set a method to use SupCon: {} is not allowed'.format(args.method))
+            # if step % 300 == 0:
+            #   print("================== {} ==================".format(step))
+            #   print ("input", inputs)
+            #   print ("-----------------------------------")
+            #   print ("features", features)
+            #   print("====================================")
+            losses += loss.item()
+        else:
+          raise ValueError('Only used with SupCon task')
+    
+    print(f'{split}', f'|total loss:', losses, f'|avg loss:', losses/len(dataloader), f'|dataset split {split} size:', len(datasets[split]))
+    # print ('\n\n\n\n\n\n')
+    return losses/len(dataloader)
 
 def supcon_train(args, model, datasets, tokenizer):
     from loss import SupConLoss
     criterion = SupConLoss(temperature=args.temperature)
-
-    # task1: load training split of the dataset
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
-
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-
-    # task2: setup model's optimizer_scheduler if you have
     if args.scheduler == 'cosine':
       steps = args.n_epochs * len(list(enumerate(train_dataloader)))
       model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
+    elif args.scheduler == 'linear':
+      steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, steps, gamma=0.1)
 
     lossList = []
     valLoss = []
     accList = []
     valAcc = []
     
-    # task3: write a training loop for SupConLoss function
+    # Trainging the augmentaion only
+    for param in model.classify.parameters():
+       param.requires_grad = False
+
+    print (" ============ Training augmentation ============ ")
+    for epoch_count in range(args.n_epochs):
+        losses = 0
+        model.train()
+        criterion = criterion.to(device)
+
+        for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
+            inputs, labels = prepare_inputs(batch, model, use_text=False)
+
+            features, logits = model(inputs, labels)
+            if (args.method == 'SupCon'):
+                loss = criterion(features, labels)
+            elif (args.method == 'SimCLR'):
+                loss = criterion(features)
+            else:
+                raise ValueError('Must set a method to use SupCon: {} is not allowed'.format(args.method))
+            # if step % 400 == 0:
+            #   print("================== {} ==================".format(step))
+            #   print ("input", inputs)
+            #   print ("-----------------------------------")
+            #   print ("features", features)
+            #   print("====================================")
+            loss.backward()
+            model.optimizer.step()  # backprop to update the weights
+            if model.scheduler:
+               model.scheduler.step()
+            
+            model.zero_grad()
+            losses += loss.item() # average loss per batch
+
+        lossList.append(losses/len(train_dataloader))
+        # print ('\n\n\n\n\n\n')
+        vls = run_eval_aug(args, model, datasets, tokenizer,  cr = criterion, split='validation')
+        valLoss.append(vls)
+        print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
+    
+    plot_losses(lossList, valLoss, fname + "augmentation")
+
+    lossList = []
+    valLoss = []
+    print (" ============ Training classifier ============ ")
+    # Training the classifier only
+    for param in model.encoder.parameters():
+       param.requires_grad = False # freeze the parameters
+
+    for param in model.classify.parameters():
+        param.requires_grad = True
+    
+    criterion = nn.CrossEntropyLoss()  
+    # resest the optimizer and scheduler
+    # args.learning_rate = 10 * args.learning_rate
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    if args.scheduler == 'cosine':
+      steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
+    elif args.scheduler == 'linear':
+      steps = args.n_epochs * len(list(enumerate(train_dataloader)))
+      model.scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, steps, gamma=0.1)
+    
     for epoch_count in range(args.n_epochs):
         losses = 0
         acc = 0
@@ -121,13 +224,15 @@ def supcon_train(args, model, datasets, tokenizer):
 
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             inputs, labels = prepare_inputs(batch, model, use_text=False)
-            logits = model(inputs, labels)
-            loss = criterion(logits, labels)
-            loss.backward()
 
+            _, logits = model(inputs, labels)
+            loss = criterion(logits, labels)
+
+            loss.backward()
             model.optimizer.step()  # backprop to update the weights
             if model.scheduler:
-              model.scheduler.step()
+               model.scheduler.step()
+            
             model.zero_grad()
             losses += loss.item() # average loss per batch
             acc += (logits.argmax(1) == labels).float().sum().item()
@@ -140,9 +245,10 @@ def supcon_train(args, model, datasets, tokenizer):
         valLoss.append(vls)
         valAcc.append(vacc)
         
-        print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
-    plot_losses(lossList, valLoss, fname)
-    plot_acc(accList, valAcc, fname)
+        print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader), '| acc:', acc/len(datasets['train']))
+
+    plot_losses(lossList, valLoss, fname + "classifier")
+    plot_acc(accList, valAcc, fname + "classifier")
 
 if __name__ == "__main__":
   args = params()
@@ -151,8 +257,6 @@ if __name__ == "__main__":
   set_seed(args)
 
   fname = get_name(args)
-#   fname = "add_scheduler_" + get_name(args)
-
 
   cache_results, already_exist = check_cache(args)
   tokenizer = load_tokenizer(args)
@@ -179,7 +283,10 @@ if __name__ == "__main__":
     custom_train(args, model, datasets, tokenizer)
     run_eval(args, model, datasets, tokenizer, split='test')
   elif args.task == 'supcon':
+    from loss import SupConLoss
+    cr = SupConLoss(temperature=args.temperature)
     model = SupConModel(args, tokenizer, target_size=60).to(device)
+    # run_eval_aug(args, model, datasets, tokenizer, cr = cr, split='validation')
     supcon_train(args, model, datasets, tokenizer)
     run_eval(args, model, datasets, tokenizer, split='test')
   
