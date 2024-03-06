@@ -40,9 +40,11 @@ def params():
                 help="Whether to run eval on the dev set.")
     
     # Hyper-parameters for tuning
-    parser.add_argument("--batch-size", default=128, type=int,
+    parser.add_argument("--batch-size", default=32, type=int,
                 help="Batch size per GPU/CPU for training and evaluation.")
     parser.add_argument("--learning-rate", default=1e-4, type=float,
+                help="Model learning rate starting point.")
+    parser.add_argument("--learning-rate-cla", default=1e-4, type=float,
                 help="Model learning rate starting point.")
     parser.add_argument("--hidden-dim", default=10, type=int,
                 help="Model hidden dimension.")
@@ -53,6 +55,8 @@ def params():
     parser.add_argument("--adam-epsilon", default=1e-8, type=float,
                 help="Epsilon for Adam optimizer.")
     parser.add_argument("--n-epochs", default=1, type=int,
+                help="Total number of training epochs to perform.")
+    parser.add_argument("--n-epochs-cla", default=1, type=int,
                 help="Total number of training epochs to perform.")
     parser.add_argument("--max-len", default=20, type=int,
                 help="maximum sequence length to look back")

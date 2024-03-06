@@ -176,7 +176,9 @@ def run_eval_aug(args, model, datasets, tokenizer, cr = None, split='validation'
     for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
         inputs, labels = prepare_inputs(batch, model)
         if (args.task == 'supcon'):
-            features, _ = model(inputs, labels)
+            f1, _ = model(inputs, labels)
+            f2, _ = model (inputs, labels)
+            features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
             if (args.method == 'SupCon'):
                 loss = cr(features, labels)
             elif (args.method == 'SimCLR'):
@@ -194,13 +196,13 @@ def run_eval_aug(args, model, datasets, tokenizer, cr = None, split='validation'
           raise ValueError('Only used with SupCon task')
     
     print(f'{split}', f'|total loss:', losses, f'|avg loss:', losses/len(dataloader), f'|dataset split {split} size:', len(datasets[split]))
-    # print ('\n\n\n\n\n\n')
     return losses/len(dataloader)
 
 def supcon_train(args, model, datasets, tokenizer):
     from loss import SupConLoss
     criterion = SupConLoss(temperature=args.temperature)
     train_dataloader = get_dataloader(args, datasets['train'], split='train')
+    
     model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
     if args.scheduler == 'cosine':
       steps = args.n_epochs * len(list(enumerate(train_dataloader)))
@@ -227,7 +229,10 @@ def supcon_train(args, model, datasets, tokenizer):
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             inputs, labels = prepare_inputs(batch, model, use_text=False)
 
-            features, logits = model(inputs, labels)
+            f1, _ = model(inputs, labels)
+            f2, _ = model(inputs, labels)
+
+            features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
             if (args.method == 'SupCon'):
                 loss = criterion(features, labels)
             elif (args.method == 'SimCLR'):
@@ -249,18 +254,24 @@ def supcon_train(args, model, datasets, tokenizer):
             losses += loss.item() # average loss per batch
 
         lossList.append(losses/len(train_dataloader))
-        # print ('\n\n\n\n\n\n')
         vls = run_eval_aug(args, model, datasets, tokenizer,  cr = criterion, split='validation')
         valLoss.append(vls)
         print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader))
-    
+        if (epoch_count % 5 == 0):
+          torch.save(model.state_dict(), f"./models/aug/{fname}-notDoneYet-{epoch_count}.pt")
+
+    torch.save(model.state_dict(), f"./models/aug/{fname}-notDoneYet-final.pt")
     plot_losses(lossList, valLoss, fname + "augmentation")
+    # save the model
+
+    args.n_epochs = args.n_epochs_cla
 
     lossList = []
     valLoss = []
+    model.dropout = nn.Dropout(p=0.2)
     print (" ============ Training classifier ============ ")
     # Training the classifier only
-    for param in model.encoder.parameters():
+    for param in model.parameters():
        param.requires_grad = False # freeze the parameters
 
     for param in model.classify.parameters():
@@ -268,8 +279,8 @@ def supcon_train(args, model, datasets, tokenizer):
     
     criterion = nn.CrossEntropyLoss()  
     # resest the optimizer and scheduler
-    # args.learning_rate = 10 * args.learning_rate
-    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+
+    model.optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate_cla, eps=args.adam_epsilon)
     if args.scheduler == 'cosine':
       steps = args.n_epochs * len(list(enumerate(train_dataloader)))
       model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, steps)
@@ -277,7 +288,7 @@ def supcon_train(args, model, datasets, tokenizer):
       steps = args.n_epochs * len(list(enumerate(train_dataloader)))
       model.scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, steps, gamma=0.1)
     
-    for epoch_count in range(args.n_epochs):
+    for epoch_count in range(args.n_epochs_cla):
         losses = 0
         acc = 0
         model.train()
@@ -307,7 +318,11 @@ def supcon_train(args, model, datasets, tokenizer):
         valAcc.append(vacc)
         
         print('train: epoch', epoch_count, '| losses:', losses, '| avg loss:', losses/len(train_dataloader), '| acc:', acc/len(datasets['train']))
+        if (epoch_count % 5 == 0):
+          torch.save(model.state_dict(), f"./models/cla/{fname}-notDoneYet-{epoch_count}.pt")
 
+
+    torch.save(model.state_dict(), f"./models/cla/{fname}-notDoneYet-final.pt")
     plot_losses(lossList, valLoss, fname + "classifier")
     plot_acc(accList, valAcc, fname + "classifier")
 
@@ -347,7 +362,9 @@ if __name__ == "__main__":
     from loss import SupConLoss
     cr = SupConLoss(temperature=args.temperature)
     model = SupConModel(args, tokenizer, target_size=60).to(device)
-    # run_eval_aug(args, model, datasets, tokenizer, cr = cr, split='validation')
+    # load the model
+    # model.load_state_dict(torch.load(f"./models/aug/bert_supcon_method-SupCon_lr-2e-05_bs-64_ep-20_dr-0.6_eps-1e-08_hdim-50_scheduler-cosine-notDoneYet-10.pt"))
+    run_eval_aug(args, model, datasets, tokenizer, cr = cr, split='validation')
     supcon_train(args, model, datasets, tokenizer)
     run_eval(args, model, datasets, tokenizer, split='test')
   
