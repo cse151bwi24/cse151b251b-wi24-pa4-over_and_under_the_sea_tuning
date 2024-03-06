@@ -69,11 +69,14 @@ class Classifier(nn.Module):
     super().__init__()
     input_dim = args.embed_dim
     self.top = nn.Linear(input_dim, args.hidden_dim)
+    self.norm = nn.BatchNorm1d(args.hidden_dim)
     self.relu = nn.ReLU()
     self.bottom = nn.Linear(args.hidden_dim, target_size)
 
   def forward(self, hidden):
-    middle = self.relu(self.top(hidden))
+    middle = self.top(hidden)
+    middle = self.norm(middle)
+    middle = self.relu(middle)
     logit = self.bottom(middle)
     return logit
 
@@ -90,10 +93,12 @@ class SupConModel(IntentModel):
 
     # task1: initialize a linear head layer
     self.linear_head = nn.Sequential(
-        nn.Linear(feat_dim,  384),
-        nn.ReLU(),
-        nn.Linear(384, 192),
-    )
+      # normailization
+      nn.Linear(feat_dim, feat_dim//2),
+      nn.BatchNorm1d(feat_dim//2),
+      nn.ReLU(),
+      nn.Linear(feat_dim//2, feat_dim//4)
+      )
     
     self.method = args.method
  
@@ -118,20 +123,19 @@ class SupConModel(IntentModel):
     # print("--------------------cls-------------------")
     # print(cls)
     f1 = self.dropout(cls)
-    f2 = self.dropout(cls)
+    # f2 = self.dropout(cls)
     # print("--------------------drop-------------------")
     # print(f1, f2)
     # print("---------------normalized-------------------")
-    f1 = F.normalize(f1, dim=1)
-    f2 = F.normalize(f2, dim=1)
     # print(f1, f2)
-    f1p = self.linear_head(f1)
-    f2p = self.linear_head(f2)
+    f1 = self.linear_head(f1)
+    # f2 = self.linear_head(f2)
+    f1 = F.normalize(f1, dim=1) # regularization type: 
     # print("--------------------linear-------------------")
     # print (f1, f2)
-    features = torch.cat([f1p.unsqueeze(1), f2p.unsqueeze(1)], dim=1)
+    # features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
     # print("===========com=============")
     # print (features.shape)
     logits = self.classify(self.dropout(cls))
-    return features, logits
+    return f1, logits
 

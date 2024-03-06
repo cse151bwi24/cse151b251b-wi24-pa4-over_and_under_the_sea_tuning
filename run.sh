@@ -19,4 +19,5 @@ mkdir assets
 # python main.py --n-epochs 10 --do-train --task custom --reinit_n_layers 3
 # python main.py --n-epochs 10 --do-train --task supcon --batch-size 64
 
-python main.py --task supcon --n-epochs 10 --do-train --temperature 0.07 --scheduler cosine --drop-rate 0.8 --learning-rate 0.00005 --hidden-dim 20 --method SimCLR >> ff7.txt
+python main.py --task supcon --n-epochs 8 --n-epochs-cla 10 --batch-size 64 --do-train --temperature 0.06 --scheduler cosine --drop-rate 0.6 --learning-rate 0.00002 --learning-rate-cla 0.0007 --hidden-dim 50 --method SupCon >> supsup2.txt
+

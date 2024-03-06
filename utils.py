@@ -133,4 +133,4 @@ def dumpArgs(args, fname):
 
 def get_name(args):
     # model_task_lr-lr_bs-batchsize_ep-epochs_dr-drop_rate_eps-epsilon_hdim-hidden
-    return f"{args.model}_{args.task}_lr-{args.learning_rate}_bs-{args.batch_size}_ep-{args.n_epochs}_dr-{args.drop_rate}_eps-{args.adam_epsilon}_hdim-{args.hidden_dim}_scheduler-{args.scheduler}"
+    return f"{args.model}_{args.task}_method-{args.method}_lr-{args.learning_rate}_bs-{args.batch_size}_ep-{args.n_epochs}_dr-{args.drop_rate}_eps-{args.adam_epsilon}_hdim-{args.hidden_dim}_scheduler-{args.scheduler}"
