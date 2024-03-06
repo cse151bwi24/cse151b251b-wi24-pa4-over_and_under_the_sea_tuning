@@ -52,11 +52,6 @@ class IntentModel(nn.Module):
     task3:
         feed the output of the dropout layer to the Classifier which is provided for you.
     """
-    # outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
-    # last_hidden_states = outputs.hidden_states[-1]
-
-    # drop_out = self.dropout(last_hidden_states[:,0,:])
-    
     outputs = self.encoder(**inputs, output_hidden_states=True) # eval mode?
     last_hidden_states = outputs.hidden_states[-1]
     cls = last_hidden_states[:,0,:]
@@ -81,8 +76,32 @@ class Classifier(nn.Module):
 class CustomModel(IntentModel):
   def __init__(self, args, tokenizer, target_size):
     super().__init__(args, tokenizer, target_size)
+    self.tokenizer = tokenizer
+    self.model_setup(args)
+    self.target_size = target_size
+    self.dropout = nn.Dropout(args.drop_rate)
+    self.classify = Classifier(args, target_size)
+    self.optimizer = None
+    self.scheduler = None
+
+    # # Setting up warm_up scheduler to just warm-- no decay
+    self.warmup_scheduler = None
+    # Setting up SWA
+    #swa_model = torch.optim.swa_utils.AveragedModel()
+    #self.swa_scheduler = None
+    self.swa_scheduler = None
+    self.avg_model = None
+    self.swa_start = 0 # used for combined technique to begin SWA
     
     # task1: use initialization for setting different strategies/techniques to better fine-tune the BERT model
+  def opt_setUp (self, opt, warmup_steps,swa_lr):
+    self.optimizer = opt
+    self.warmup_scheduler = get_cosine_schedule_with_warmup(optimizer=self.optimizer,
+                                                    num_warmup_steps = warmup_steps,
+                                                    num_training_steps = warmup_steps)
+    self.swa_start = warmup_steps # for the combined technique
+    self.swa_scheduler = torch.optim.swa_utils.SWALR(self.optimizer, swa_lr = swa_lr)
+
 
 class SupConModel(IntentModel):
   def __init__(self, args, tokenizer, target_size, feat_dim=768):
